@@ -1,7 +1,21 @@
-// app/page.tsx
+// src/app/page.tsx
 "use client"; // Next.js: mark this component as client-side only
 
 import { useEffect, useRef } from "react";
+
+/* -------------------- Local types (replace all `any`) -------------------- */
+type Star = {
+  x: number; y: number; z: number;
+  vx: number; vy: number;
+  r: number;          // base radius (device px)
+  tw: number;         // twinkle phase
+};
+
+type Nebula = {
+  x: number; y: number; r: number;
+  vx: number; vy: number;
+  hue: number; alpha: number;
+};
 
 export default function Home() {
   // Canvas element we draw the background animation on                     // <canvas id="bg-canvas" />
@@ -15,11 +29,11 @@ export default function Home() {
      * =========================== */
     const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches; // respect user accessibility setting
     const canvas = canvasRef.current!;                                      // non-null because this effect runs after mount
-    const ctx = canvas.getContext("2d", { alpha: true, desynchronized: true })!; // desynchronized hints for perf
+    const ctx = canvas.getContext("2d", { alpha: true, desynchronized: true })! as CanvasRenderingContext2D; // perf hint
 
     // Simulation state                                                     // kept outside render for performance
-    let stars: any[] = [];                                                  // array of star particles
-    let nebulas: any[] = [];                                                // array of soft nebula blobs
+    let stars: Star[] = [];                                                 // array of star particles
+    let nebulas: Nebula[] = [];                                             // array of soft nebula blobs
     let w: number, h: number, dpr: number, rafId: number | null = null;     // canvas width/height, device pixel ratio, RAF id
     let paused = false;                                                     // pause when tab is hidden
 
@@ -29,7 +43,7 @@ export default function Home() {
     function initSky() {
       const area = innerWidth * innerHeight;                                // screen area (CSS pixels)
       const starCount = Math.max(80, Math.floor(area / 11000));             // scale star count with screen size
-      stars = Array.from({ length: starCount }, () => ({                    // create stars with slight variance
+      stars = Array.from({ length: starCount }, (): Star => ({              // create stars with slight variance
         x: Math.random() * w,                                               // position x in device pixels
         y: Math.random() * h,                                               // position y in device pixels
         z: Math.random() * 0.6 + 0.4,                                       // depth factor (0.4–1.0) affects size/alpha
@@ -40,7 +54,7 @@ export default function Home() {
       }));
 
       const nebulaCount = 5;                                                // number of large soft blobs
-      nebulas = Array.from({ length: nebulaCount }, () => ({
+      nebulas = Array.from({ length: nebulaCount }, (): Nebula => ({
         x: Math.random() * w,                                               // start position
         y: Math.random() * h,
         r: (Math.random() * 0.25 + 0.15) * Math.max(w, h),                  // radius relative to viewport
@@ -86,17 +100,17 @@ export default function Home() {
         if (n.y > h + n.r) n.y = -n.r;
 
         // radial gradient with soft falloff                                // gives a glowing cloud look
-        const g = ctx.createRadialGradient(n.x, n.y, 0, n.x, n.y, n.r);
+        const g: CanvasGradient = ctx.createRadialGradient(n.x, n.y, 0, n.x, n.y, n.r);
         g.addColorStop(0, `hsla(${n.hue}, 70%, 70%, ${n.alpha})`);
         g.addColorStop(1, `hsla(${n.hue}, 70%, 70%, 0)`);
 
-        (ctx as any).globalCompositeOperation = "screen";                   // additive-like blending for glow
-        ctx.fillStyle = g as any;
+        ctx.globalCompositeOperation = "screen";                            // additive-like blending for glow
+        ctx.fillStyle = g;
         ctx.beginPath();
         ctx.arc(n.x, n.y, n.r, 0, Math.PI * 2);
         ctx.fill();
       }
-      (ctx as any).globalCompositeOperation = "lighter";                    // keep additive feel for subsequent strokes
+      ctx.globalCompositeOperation = "lighter";                             // keep additive feel for subsequent strokes
     }
 
     /* ---------------------------

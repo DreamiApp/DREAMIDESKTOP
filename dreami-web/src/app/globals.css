@@ -2,7 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* === Dreami styles (from your HTML) === */
+/* === Dreami styles === */
 :root{
   --bg1:#040208; --bg2:#080513; --bg3:#120A20; --text:#F7F7F8;
   --highlight-start:#C9A7FF; --highlight-end:#8E75FF;
@@ -27,12 +27,22 @@ body{
   -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
   position:relative; font-synthesis-weight:none;
 }
+/* soft vignette */
 body::before{
   content:""; position:fixed; inset:0; pointer-events:none; z-index:0;
   background: radial-gradient(60% 60% at 50% 35%, rgba(0,0,0,0) 0%, rgba(0,0,0,0.15) 55%, rgba(0,0,0,0.35) 100%);
 }
 
-#bg-canvas{position:fixed; inset:0; width:100%; height:100%; z-index:-1; display:block}
+/* Canvas behind everything, iOS-safe height */
+#bg-canvas{
+  position:fixed; inset:0; width:100vw; height:100svh; z-index:-1; display:block;
+}
+
+/* Slightly tame the brightness on small screens (iOS Safari blowout fix) */
+@media (max-width: 640px){
+  #bg-canvas{ filter: brightness(.9) contrast(1.05); }
+}
+
 .container{max-width:var(--maxw); margin:0 auto; padding:0 32px; position:relative; z-index:1}
 
 /* Skip link */
@@ -60,10 +70,36 @@ nav[aria-label="Primary"]{display:flex; align-items:center; justify-content:flex
 .nav-btn.ghost{border-color:var(--btn-border)}
 .nav-link{color:inherit; text-decoration:none}
 
-.hero{display:grid; place-items:center; text-align:center; padding:136px 0 120px}
+/* === Hero (mobile-contrast veil) === */
+.hero{
+  display:grid; place-items:center; text-align:center; padding:136px 0 120px;
+  position:relative;
+}
+/* Dark veil sits under the text to prevent washout on iOS */
+.hero::before{
+  content:""; position:absolute; inset:0; pointer-events:none; z-index:0;
+  background: linear-gradient(to bottom,
+    rgba(0,0,0,.35),
+    rgba(0,0,0,.45) 60%,
+    rgba(0,0,0,.38)
+  );
+}
+/* Ease veil on larger screens so desktop matches your screenshot */
+@media (min-width:768px){
+  .hero::before{
+    background: linear-gradient(to bottom,
+      rgba(0,0,0,.18),
+      rgba(0,0,0,.26) 60%,
+      rgba(0,0,0,.22)
+    );
+  }
+}
+
+.title, .highlight, .subheader{ position:relative; z-index:1; }
+
 .title{
   font-size:clamp(46px, 9vw, 112px); line-height:0.95; font-weight:900; letter-spacing:2px; margin:0 0 18px;
-  text-shadow:0 0 26px rgba(255,255,255,0.08), 0 0 70px rgba(132, 92, 255, 0.15);
+  text-shadow:0 6px 32px rgba(0,0,0,.55); /* stronger, works on light centers */
   text-wrap:balance;
 }
 .highlight{
@@ -71,7 +107,12 @@ nav[aria-label="Primary"]{display:flex; align-items:center; justify-content:flex
   -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;
   font-size:clamp(14px, 2.2vw, 26px); letter-spacing:.18em; text-transform:uppercase; display:inline-block; margin-bottom:16px; font-weight:800
 }
-.subheader{max-width:860px; margin:18px auto 36px; font-size:clamp(16px, 2.1vw, 20px); line-height:1.7; color:#DADAE5; text-wrap:balance}
+/* Higher-contrast subheader for phones */
+.subheader{
+  max-width:860px; margin:18px auto 36px;
+  font-size:clamp(16px, 2.1vw, 20px); line-height:1.7;
+  color:rgba(255,255,255,.9); text-wrap:balance;
+}
 
 .cta-row{display:flex; justify-content:center; margin-top:22px}
 .cta{

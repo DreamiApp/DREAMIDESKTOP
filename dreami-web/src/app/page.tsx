@@ -27,7 +27,7 @@ export default function Home() {
     const prevOverflow = document.body.style.overflow;
     const prevBehavior = (document.body.style as any).overscrollBehavior;
 
-    document.body.style.overflow = "hidden";              // disable scroll
+    document.body.style.overflow = "hidden";                 // disable scroll
     (document.body.style as any).overscrollBehavior = "none"; // stop iOS bounce
 
     return () => {
@@ -45,13 +45,18 @@ export default function Home() {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    const ctxMaybe = canvas.getContext("2d", { alpha: true, desynchronized: true });
+    // lock a non-null local so TS is happy in nested functions
+    const cv = canvas as HTMLCanvasElement;
+
+    const ctxMaybe = cv.getContext("2d", { alpha: true, desynchronized: true });
     if (!ctxMaybe) return;
-    const c = ctxMaybe; // <-- Non-null, use this everywhere below
+    const c = ctxMaybe; // non-null 2D context
 
     // Respect reduced motion (live)
     let prefersReduced = matchMedia("(prefers-reduced-motion: reduce)");
     let reduceMotion = prefersReduced.matches;
+
+    // Simulation state
     let stars: Star[] = [];
     let nebulas: Nebula[] = [];
     let w = 0, h = 0, dpr = 1;
@@ -117,13 +122,13 @@ export default function Home() {
       const cssW = Math.round(document.documentElement.clientWidth);
       const cssH = Math.round(window.visualViewport?.height ?? window.innerHeight);
 
-      canvas.width = Math.floor(cssW * dpr);
-      canvas.height = Math.floor(cssH * dpr);
-      canvas.style.width = cssW + "px";
-      canvas.style.height = cssH + "px";
+      cv.width = Math.floor(cssW * dpr);
+      cv.height = Math.floor(cssH * dpr);
+      cv.style.width = cssW + "px";
+      cv.style.height = cssH + "px";
 
-      w = canvas.width;
-      h = canvas.height;
+      w = cv.width;
+      h = cv.height;
 
       c.setTransform(1, 0, 0, 1, 0, 0);
       initSky();

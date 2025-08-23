@@ -15,6 +15,9 @@ type Nebula = {
   hue: number; alpha: number;
 };
 
+/** Extend CSSStyleDeclaration for overscrollBehavior (older DOM libs omit it) */
+type OverscrollStyle = CSSStyleDeclaration & { overscrollBehavior?: string };
+
 export default function Home() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
@@ -22,15 +25,16 @@ export default function Home() {
    * Scroll lock (keeps edges clean)
    * --------------------------- */
   useEffect(() => {
-    const prevOverflow = document.body.style.overflow;
-    const prevBehavior = (document.body.style as any).overscrollBehavior;
+    const bodyStyle = document.body.style as OverscrollStyle;
+    const prevOverflow = bodyStyle.overflow;
+    const prevBehavior = bodyStyle.overscrollBehavior;
 
-    document.body.style.overflow = "hidden";
-    (document.body.style as any).overscrollBehavior = "none";
+    bodyStyle.overflow = "hidden";
+    bodyStyle.overscrollBehavior = "none";
 
     return () => {
-      document.body.style.overflow = prevOverflow;
-      (document.body.style as any).overscrollBehavior = prevBehavior;
+      bodyStyle.overflow = prevOverflow;
+      bodyStyle.overscrollBehavior = prevBehavior;
     };
   }, []);
 
@@ -38,12 +42,13 @@ export default function Home() {
    * Block zoom (pinch + double-tap) on iOS
    * ---------------------------------------- */
   useEffect(() => {
-    const prevent = (e: Event) => e.preventDefault();
+    const prevent: EventListener = (e) => e.preventDefault();
+    const nonPassive: AddEventListenerOptions = { passive: false };
 
-    // Safari gesture events (not in TS lib)
-    document.addEventListener("gesturestart" as any, prevent, { passive: false } as any);
-    document.addEventListener("gesturechange" as any, prevent, { passive: false } as any);
-    document.addEventListener("gestureend" as any, prevent, { passive: false } as any);
+    // Safari gesture events exist at runtime even if not in TS event map
+    document.addEventListener("gesturestart", prevent, nonPassive);
+    document.addEventListener("gesturechange", prevent, nonPassive);
+    document.addEventListener("gestureend", prevent, nonPassive);
 
     // Prevent double-tap zoom
     let last = 0;
@@ -52,13 +57,13 @@ export default function Home() {
       if (now - last < 300) e.preventDefault();
       last = now;
     };
-    document.addEventListener("touchend", onTouchEnd, { passive: false });
+    document.addEventListener("touchend", onTouchEnd, nonPassive);
 
     return () => {
-      document.removeEventListener("gesturestart" as any, prevent as any);
-      document.removeEventListener("gesturechange" as any, prevent as any);
-      document.removeEventListener("gestureend" as any, prevent as any);
-      document.removeEventListener("touchend", onTouchEnd as any);
+      document.removeEventListener("gesturestart", prevent);
+      document.removeEventListener("gesturechange", prevent);
+      document.removeEventListener("gestureend", prevent);
+      document.removeEventListener("touchend", onTouchEnd);
     };
   }, []);
 
@@ -68,15 +73,14 @@ export default function Home() {
   useEffect(() => {
     document.body.classList.remove("no-js");
 
-    const canvas = canvasRef.current;
-    if (!canvas) return;
+    const cv = canvasRef.current;
+    if (!cv) return;
 
-    const cv = canvas as HTMLCanvasElement;
-    const ctxMaybe = cv.getContext("2d", { alpha: true, desynchronized: true });
-    if (!ctxMaybe) return;
-    const c = ctxMaybe;
+    const ctx = cv.getContext("2d", { alpha: true, desynchronized: true });
+    if (!ctx) return;
+    const c = ctx;
 
-    let prefersReduced = matchMedia("(prefers-reduced-motion: reduce)");
+    const prefersReduced = matchMedia("(prefers-reduced-motion: reduce)");
     let reduceMotion = prefersReduced.matches;
 
     let stars: Star[] = [];
@@ -144,15 +148,15 @@ export default function Home() {
     function resize() {
       dpr = currentDPRCap();
 
-      // Measure the rendered size so we honor safe-area bleed from CSS
+      // Measure rendered size so we honor safe-area bleed from CSS
       const rect = cv.getBoundingClientRect();
       const cssW = Math.max(1, Math.round(rect.width));
       const cssH = Math.max(1, Math.round(rect.height));
 
-      cv.width  = Math.floor(cssW * dpr);
+      cv.width = Math.floor(cssW * dpr);
       cv.height = Math.floor(cssH * dpr);
 
-      // Don't set style width/height; CSS controls those to cover safe areas
+      // CSS controls style width/height to cover safe areas
       w = cv.width;
       h = cv.height;
 
@@ -213,7 +217,7 @@ export default function Home() {
 
     let resizeTimer: number | undefined;
     const debouncedResize = () => {
-      clearTimeout(resizeTimer);
+      window.clearTimeout(resizeTimer);
       resizeTimer = window.setTimeout(resize, 100);
     };
 
@@ -224,7 +228,7 @@ export default function Home() {
     window.addEventListener("orientationchange", debouncedResize);
     window.addEventListener("resize", debouncedResize);
 
-    let dprQuery = matchMedia(`(resolution: ${window.devicePixelRatio}dppx)`);
+    let dprQuery: MediaQueryList = matchMedia(`(resolution: ${window.devicePixelRatio}dppx)`);
     const onDprChange = () => {
       dprQuery.removeEventListener?.("change", onDprChange);
       dprQuery = matchMedia(`(resolution: ${window.devicePixelRatio}dppx)`);

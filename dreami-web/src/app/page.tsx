@@ -7,10 +7,8 @@ import { useEffect, useRef } from "react";
 type Star = {
   x: number; y: number; z: number;
   vx: number; vy: number;
-  r: number;
-  tw: number;
+  r: number; tw: number;
 };
-
 type Nebula = {
   x: number; y: number; r: number;
   vx: number; vy: number;
@@ -19,40 +17,21 @@ type Nebula = {
 
 export default function Home() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const landscapeRef = useRef<HTMLDivElement | null>(null);
 
   /* ---------------------------
-   * Scroll lock (only on Home)
+   * Scroll lock (keeps edges clean)
    * --------------------------- */
   useEffect(() => {
     const prevOverflow = document.body.style.overflow;
     const prevBehavior = (document.body.style as any).overscrollBehavior;
 
-    document.body.style.overflow = "hidden";                 // disable scroll
-    (document.body.style as any).overscrollBehavior = "none"; // stop iOS bounce
+    document.body.style.overflow = "hidden";
+    (document.body.style as any).overscrollBehavior = "none";
 
     return () => {
       document.body.style.overflow = prevOverflow;
       (document.body.style as any).overscrollBehavior = prevBehavior;
     };
-  }, []);
-
-  /* ---------------------------------------------------------
-   * Try to lock to portrait where supported (Android/PWA only)
-   * --------------------------------------------------------- */
-  useEffect(() => {
-    const tryLock = async () => {
-      try {
-        const ori: any = (screen as any)?.orientation;
-        if (ori?.lock) await ori.lock("portrait");
-      } catch {
-        /* iOS Safari will ignore this */
-      }
-    };
-    // Orientation lock requires a user gesture
-    const onFirstInput = () => { tryLock(); };
-    window.addEventListener("pointerdown", onFirstInput, { once: true });
-    return () => window.removeEventListener("pointerdown", onFirstInput);
   }, []);
 
   /* ----------------------------------------
@@ -83,48 +62,6 @@ export default function Home() {
     };
   }, []);
 
-  /* ---------------------------------------------------
-   * Show overlay if a PHONE is in landscape (browser)
-   * --------------------------------------------------- */
-  useEffect(() => {
-    const el = landscapeRef.current;
-    if (!el) return;
-
-    const isPhone = () =>
-      matchMedia("(hover: none) and (pointer: coarse)").matches;
-
-    const isLandscape = () =>
-      matchMedia("(orientation: landscape)").matches;
-
-    const smallViewport = () => {
-      const vh = Math.round(window.visualViewport?.height ?? window.innerHeight);
-      return vh <= 500; // guard to avoid tablets/desktops
-    };
-
-    const isStandalonePWA = () =>
-      matchMedia("(display-mode: standalone)").matches;
-
-    const update = () => {
-      const show = isPhone() && isLandscape() && smallViewport() && !isStandalonePWA();
-      el.style.display = show ? "grid" : "none";
-    };
-
-    update();
-
-    const vv = window.visualViewport;
-    vv?.addEventListener("resize", update);
-    vv?.addEventListener("scroll", update);
-    window.addEventListener("resize", update);
-    window.addEventListener("orientationchange", update);
-
-    return () => {
-      vv?.removeEventListener("resize", update);
-      vv?.removeEventListener("scroll", update);
-      window.removeEventListener("resize", update);
-      window.removeEventListener("orientationchange", update);
-    };
-  }, []);
-
   /* ---------------------------
    * Background starfield
    * --------------------------- */
@@ -134,18 +71,14 @@ export default function Home() {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    // lock a non-null local so TS is happy in nested functions
     const cv = canvas as HTMLCanvasElement;
-
     const ctxMaybe = cv.getContext("2d", { alpha: true, desynchronized: true });
     if (!ctxMaybe) return;
-    const c = ctxMaybe; // non-null 2D context
+    const c = ctxMaybe;
 
-    // Respect reduced motion (live)
     let prefersReduced = matchMedia("(prefers-reduced-motion: reduce)");
     let reduceMotion = prefersReduced.matches;
 
-    // Simulation state
     let stars: Star[] = [];
     let nebulas: Nebula[] = [];
     let w = 0, h = 0, dpr = 1;
@@ -166,11 +99,17 @@ export default function Home() {
     };
     prefersReduced.addEventListener?.("change", onReducedMotionChange);
 
+    function currentDPRCap() {
+      const smallScreen = (document.documentElement.clientWidth || window.innerWidth) <= 640;
+      return Math.min(window.devicePixelRatio || 1, smallScreen ? 1.5 : 2);
+    }
+
     function initSky() {
       const vw = document.documentElement.clientWidth;
       const vh = Math.round(window.visualViewport?.height ?? window.innerHeight);
-
       const area = vw * vh;
+
+      // Consistent density
       const starCount = Math.max(80, Math.floor(area / 11000));
       stars = Array.from({ length: starCount }, (): Star => ({
         x: Math.random() * w,
@@ -182,11 +121,13 @@ export default function Home() {
         tw: Math.random() * Math.PI * 2,
       }));
 
+      // Landscape-friendly glow: scale by diagonal so wide screens still feel filled
       const nebulaCount = 5;
+      const diag = Math.hypot(w, h);
       nebulas = Array.from({ length: nebulaCount }, (): Nebula => ({
         x: Math.random() * w,
         y: Math.random() * h,
-        r: (Math.random() * 0.25 + 0.15) * Math.max(w, h),
+        r: (Math.random() * 0.22 + 0.18) * diag, // was based on max(w,h)
         vx: (Math.random() - 0.5) * 0.03,
         vy: (Math.random() - 0.5) * 0.03,
         hue: 255 + Math.random() * 60,
@@ -198,11 +139,6 @@ export default function Home() {
         drawNebulas();
         drawStars(0);
       }
-    }
-
-    function currentDPRCap() {
-      const smallScreen = (document.documentElement.clientWidth || window.innerWidth) <= 640;
-      return Math.min(window.devicePixelRatio || 1, smallScreen ? 1.5 : 2);
     }
 
     function resize() {
@@ -325,43 +261,6 @@ export default function Home() {
     <>
       <a className="skip-link" href="#main">Skip to content</a>
       <canvas id="bg-canvas" ref={canvasRef} aria-hidden="true" />
-
-      {/* Landscape overlay (no extra CSS required) */}
-      <div
-        id="landscape-blocker"
-        ref={landscapeRef}
-        aria-hidden="true"
-        style={{
-          position: "fixed",
-          inset: 0,
-          display: "none",
-          zIndex: 9999,
-          alignItems: "center",
-          justifyContent: "center",
-          pointerEvents: "none",
-        }}
-      >
-        <div
-          className="lb-card"
-          style={{
-            background: "rgba(4,2,8,0.96)",
-            border: "1px solid rgba(255,255,255,0.12)",
-            borderRadius: 16,
-            padding: "18px 20px",
-            textAlign: "center",
-            color: "#fff",
-            backdropFilter: "blur(6px)",
-            pointerEvents: "auto",
-          }}
-        >
-          <h2 style={{ margin: "0 0 6px", fontSize: 18, letterSpacing: ".04em" }}>
-            Best in portrait
-          </h2>
-          <p style={{ margin: 0, color: "#D6D6E3", fontSize: 14 }}>
-            Please rotate your device.
-          </p>
-        </div>
-      </div>
 
       <header>
         <div className="container">{/* logo/nav optional */}</div>

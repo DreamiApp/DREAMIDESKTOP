@@ -1,14 +1,14 @@
 // src/app/page.tsx
-"use client"; // Next.js: mark this component as client-side only
+"use client";
 
 import { useEffect, useRef } from "react";
 
-/* -------------------- Local types (replace all `any`) -------------------- */
+/* -------------------- Local types -------------------- */
 type Star = {
   x: number; y: number; z: number;
   vx: number; vy: number;
-  r: number;          // base radius (device px)
-  tw: number;         // twinkle phase
+  r: number;
+  tw: number;
 };
 
 type Nebula = {
@@ -18,210 +18,238 @@ type Nebula = {
 };
 
 export default function Home() {
-  // Canvas element we draw the background animation on                     // <canvas id="bg-canvas" />
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);                 // ref is populated after first render
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
+  /* ---------------------------
+   * Scroll lock (only on Home)
+   * --------------------------- */
   useEffect(() => {
-    document.body.classList.remove("no-js");                                // progressive enhancement: signal JS is active
+    const prevOverflow = document.body.style.overflow;
+    const prevBehavior = document.body.style.overscrollBehavior;
 
-    /* ===========================
-     * Canvas / Starfield Setup
-     * =========================== */
-    const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches; // respect user accessibility setting
-    const canvas = canvasRef.current!;                                      // non-null because this effect runs after mount
-    const ctx = canvas.getContext("2d", { alpha: true, desynchronized: true })! as CanvasRenderingContext2D; // perf hint
+    document.body.style.overflow = "hidden";            // disable scroll
+    document.body.style.overscrollBehavior = "none";    // stop iOS bounce
 
-    // Simulation state                                                     // kept outside render for performance
-    let stars: Star[] = [];                                                 // array of star particles
-    let nebulas: Nebula[] = [];                                             // array of soft nebula blobs
-    let w: number, h: number, dpr: number, rafId: number | null = null;     // canvas width/height, device pixel ratio, RAF id
-    let paused = false;                                                     // pause when tab is hidden
+    return () => {
+      document.body.style.overflow = prevOverflow;
+      document.body.style.overscrollBehavior = prevBehavior;
+    };
+  }, []);
 
-    /* ---------------------------
-     * Initialize sky objects
-     * --------------------------- */
+  /* ---------------------------
+   * Background starfield
+   * --------------------------- */
+  useEffect(() => {
+    document.body.classList.remove("no-js");
+
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    // TS-safe: narrow after null check (no 'possibly null' error)
+    const ctx = canvas.getContext("2d", { alpha: true, desynchronized: true });
+    if (!ctx) return;
+
+    // Respect reduced motion (live)
+    let prefersReduced = matchMedia("(prefers-reduced-motion: reduce)");
+    let reduceMotion = prefersReduced.matches;
+    const onReducedMotionChange = () => {
+      reduceMotion = prefersReduced.matches;
+      if (reduceMotion) {
+        ctx.clearRect(0, 0, w, h);
+        drawNebulas();
+        drawStars(0);
+        if (rafId) cancelAnimationFrame(rafId);
+        rafId = null;
+      } else {
+        if (!rafId) rafId = requestAnimationFrame(step);
+      }
+    };
+    prefersReduced.addEventListener?.("change", onReducedMotionChange);
+
+    // Simulation state
+    let stars: Star[] = [];
+    let nebulas: Nebula[] = [];
+    let w = 0, h = 0, dpr = 1;
+    let rafId: number | null = null;
+    let paused = false;
+
     function initSky() {
-      const area = innerWidth * innerHeight;                                // screen area (CSS pixels)
-      const starCount = Math.max(80, Math.floor(area / 11000));             // scale star count with screen size
-      stars = Array.from({ length: starCount }, (): Star => ({              // create stars with slight variance
-        x: Math.random() * w,                                               // position x in device pixels
-        y: Math.random() * h,                                               // position y in device pixels
-        z: Math.random() * 0.6 + 0.4,                                       // depth factor (0.4–1.0) affects size/alpha
-        vx: (Math.random() - 0.5) * 0.05,                                   // slow horizontal drift
-        vy: (Math.random() - 0.5) * 0.05,                                   // slow vertical drift
-        r: Math.random() * 1.3 + 0.4,                                       // base radius (device pixels before z)
-        tw: Math.random() * Math.PI * 2,                                    // twinkle phase offset
-      }));
+      const vw = document.documentElement.clientWidth;
+      const vh = Math.round(window.visualViewport?.height ?? window.innerHeight);
 
-      const nebulaCount = 5;                                                // number of large soft blobs
-      nebulas = Array.from({ length: nebulaCount }, (): Nebula => ({
-        x: Math.random() * w,                                               // start position
+      const area = vw * vh;
+      const starCount = Math.max(80, Math.floor(area / 11000));
+      stars = Array.from({ length: starCount }, (): Star => ({
+        x: Math.random() * w,
         y: Math.random() * h,
-        r: (Math.random() * 0.25 + 0.15) * Math.max(w, h),                  // radius relative to viewport
-        vx: (Math.random() - 0.5) * 0.03,                                   // very slow drift
-        vy: (Math.random() - 0.5) * 0.03,
-        hue: 255 + Math.random() * 60,                                      // cool purple/blue range
-        alpha: 0.035 + Math.random() * 0.035,                               // very faint fill
+        z: Math.random() * 0.6 + 0.4,
+        vx: (Math.random() - 0.5) * 0.05,
+        vy: (Math.random() - 0.5) * 0.05,
+        r: Math.random() * 1.3 + 0.4,
+        tw: Math.random() * Math.PI * 2,
       }));
 
-      if (reduceMotion) {                                                   // if animations reduced, draw once
+      const nebulaCount = 5;
+      nebulas = Array.from({ length: nebulaCount }, (): Nebula => ({
+        x: Math.random() * w,
+        y: Math.random() * h,
+        r: (Math.random() * 0.25 + 0.15) * Math.max(w, h),
+        vx: (Math.random() - 0.5) * 0.03,
+        vy: (Math.random() - 0.5) * 0.03,
+        hue: 255 + Math.random() * 60,
+        alpha: 0.035 + Math.random() * 0.035,
+      }));
+
+      if (reduceMotion) {
         ctx.clearRect(0, 0, w, h);
         drawNebulas();
         drawStars(0);
       }
     }
 
-    /* ---------------------------
-     * Handle canvas sizing / DPR
-     * --------------------------- */
-    function resize() {
-      const cap = innerWidth <= 640 ? 1.5 : 2;                              // cap DPR to control fill-rate on small/large
-      dpr = Math.min(window.devicePixelRatio || 1, cap);                    // final device pixel ratio used for backing store
-      w = (canvas.width = Math.floor(innerWidth * dpr));                    // set canvas backing width in device pixels
-      h = (canvas.height = Math.floor(innerHeight * dpr));                  // set canvas backing height in device pixels
-      canvas.style.width = innerWidth + "px";                               // CSS size (logical pixels)
-      canvas.style.height = innerHeight + "px";
-      initSky();                                                            // recreate particles to fit new size
+    function currentDPRCap() {
+      const smallScreen = (document.documentElement.clientWidth || window.innerWidth) <= 640;
+      return Math.min(window.devicePixelRatio || 1, smallScreen ? 1.5 : 2);
     }
 
-    /* ---------------------------
-     * Nebula painter
-     * --------------------------- */
+    function resize() {
+      dpr = currentDPRCap();
+
+      const cssW = Math.round(document.documentElement.clientWidth);
+      const cssH = Math.round(window.visualViewport?.height ?? window.innerHeight);
+
+      canvas.width = Math.floor(cssW * dpr);
+      canvas.height = Math.floor(cssH * dpr);
+      canvas.style.width = cssW + "px";
+      canvas.style.height = cssH + "px";
+
+      w = canvas.width;
+      h = canvas.height;
+
+      // ts-expect-error – TS can't infer ctx type from getContext narrow; it's fine at runtime
+      (ctx as CanvasRenderingContext2D).setTransform(1, 0, 0, 1, 0, 0);
+      initSky();
+    }
+
     function drawNebulas() {
       for (const n of nebulas) {
-        // integrate motion                                                 // extremely slow drift for parallax feel
         n.x += n.vx * dpr;
         n.y += n.vy * dpr;
 
-        // wrap around screen edges                                         // seamless looping
         if (n.x < -n.r) n.x = w + n.r;
         if (n.x > w + n.r) n.x = -n.r;
         if (n.y < -n.r) n.y = h + n.r;
         if (n.y > h + n.r) n.y = -n.r;
 
-        // radial gradient with soft falloff                                // gives a glowing cloud look
-        const g: CanvasGradient = ctx.createRadialGradient(n.x, n.y, 0, n.x, n.y, n.r);
+        const g = (ctx as CanvasRenderingContext2D).createRadialGradient(n.x, n.y, 0, n.x, n.y, n.r);
         g.addColorStop(0, `hsla(${n.hue}, 70%, 70%, ${n.alpha})`);
         g.addColorStop(1, `hsla(${n.hue}, 70%, 70%, 0)`);
 
-        ctx.globalCompositeOperation = "screen";                            // additive-like blending for glow
-        ctx.fillStyle = g;
-        ctx.beginPath();
-        ctx.arc(n.x, n.y, n.r, 0, Math.PI * 2);
-        ctx.fill();
+        (ctx as CanvasRenderingContext2D).globalCompositeOperation = "screen";
+        (ctx as CanvasRenderingContext2D).fillStyle = g;
+        (ctx as CanvasRenderingContext2D).beginPath();
+        (ctx as CanvasRenderingContext2D).arc(n.x, n.y, n.r, 0, Math.PI * 2);
+        (ctx as CanvasRenderingContext2D).fill();
       }
-      ctx.globalCompositeOperation = "lighter";                             // keep additive feel for subsequent strokes
+      (ctx as CanvasRenderingContext2D).globalCompositeOperation = "lighter";
     }
 
-    /* ---------------------------
-     * Star painter (with twinkle)
-     * --------------------------- */
     function drawStars(t: number) {
       for (const s of stars) {
-        // integrate slow drift                                            // tiny motion creates life in the scene
         s.x += s.vx * dpr;
         s.y += s.vy * dpr;
 
-        // wrap at edges                                                   // prevents disappearing stars
         if (s.x < 0) s.x = w;
         if (s.x > w) s.x = 0;
         if (s.y < 0) s.y = h;
         if (s.y > h) s.y = 0;
 
-        // twinkle factor                                                  // smooth pulsing brightness
-        const tw = 0.5 + 0.5 * Math.sin(t / 1400 + s.tw);                  // 0..1 over time
-
-        // alpha based on depth + twinkle                                  // nearer stars appear brighter
+        const tw = 0.5 + 0.5 * Math.sin(t / 1400 + s.tw);
         const a = (0.2 + 0.45 * s.z) * tw;
 
-        ctx.beginPath();
-        ctx.fillStyle = `rgba(255,255,255,${a})`;                          // white stars with varying opacity
-        ctx.arc(s.x, s.y, s.r * s.z, 0, Math.PI * 2);                      // radius scaled by depth z
-        ctx.fill();
+        (ctx as CanvasRenderingContext2D).beginPath();
+        (ctx as CanvasRenderingContext2D).fillStyle = `rgba(255,255,255,${a})`;
+        (ctx as CanvasRenderingContext2D).arc(s.x, s.y, s.r * s.z, 0, Math.PI * 2);
+        (ctx as CanvasRenderingContext2D).fill();
       }
     }
 
-    /* ---------------------------
-     * Animation loop
-     * --------------------------- */
     function step(t = 0) {
-      if (paused || reduceMotion) return;                                   // stop when tab hidden or animations reduced
-      ctx.clearRect(0, 0, w, h);                                           // clear full frame (device pixels)
-      drawNebulas();                                                        // paint background glow
-      drawStars(t);                                                         // paint stars on top
-      rafId = requestAnimationFrame(step);                                  // schedule next frame
+      if (paused || reduceMotion) return;
+      (ctx as CanvasRenderingContext2D).clearRect(0, 0, w, h);
+      drawNebulas();
+      drawStars(t);
+      rafId = requestAnimationFrame(step);
     }
 
-    /* ---------------------------
-     * Event wiring
-     * --------------------------- */
-    let resizeT: number | undefined;                                        // debounce timer id
-    const onResize = () => {                                                // debounce to avoid thrashing on drag/rotate
-      clearTimeout(resizeT);
-      resizeT = window.setTimeout(resize, 120);
+    let resizeTimer: number | undefined;
+    const debouncedResize = () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = window.setTimeout(resize, 100);
     };
 
-    document.addEventListener("visibilitychange", () => {                   // pause when the tab is hidden
+    const vv = window.visualViewport;
+    vv?.addEventListener("resize", debouncedResize);
+    vv?.addEventListener("scroll", debouncedResize);
+
+    window.addEventListener("orientationchange", debouncedResize);
+    window.addEventListener("resize", debouncedResize);
+
+    let dprQuery = matchMedia(`(resolution: ${window.devicePixelRatio}dppx)`);
+    const onDprChange = () => {
+      dprQuery.removeEventListener?.("change", onDprChange);
+      dprQuery = matchMedia(`(resolution: ${window.devicePixelRatio}dppx)`);
+      dprQuery.addEventListener?.("change", onDprChange);
+      debouncedResize();
+    };
+    dprQuery.addEventListener?.("change", onDprChange);
+
+    document.addEventListener("visibilitychange", () => {
       paused = document.hidden;
       if (!paused && !reduceMotion) {
-        if (rafId) cancelAnimationFrame(rafId);                             // reset RAF to avoid double loops
+        if (rafId) cancelAnimationFrame(rafId);
         rafId = requestAnimationFrame(step);
       }
     });
 
-    // Initial layout + start loop
-    resize();                                                               // compute DPR, size canvas, (re)spawn particles
-    if (!reduceMotion) rafId = requestAnimationFrame(step);                 // kick off animation if allowed
-    window.addEventListener("resize", onResize);                            // adapt to viewport changes
-    window.addEventListener("DOMContentLoaded", () =>                       // subtle reveal class for CSS transitions
-      requestAnimationFrame(() => document.body.classList.add("reveal"))
-    );
+    resize();
+    if (!reduceMotion) rafId = requestAnimationFrame(step);
 
-    /* ---------------------------
-     * Cleanup on unmount
-     * --------------------------- */
     return () => {
-      window.removeEventListener("resize", onResize);                       // remove listeners to avoid leaks
-      if (rafId) cancelAnimationFrame(rafId);                               // stop animation loop
+      vv?.removeEventListener("resize", debouncedResize);
+      vv?.removeEventListener("scroll", debouncedResize);
+      window.removeEventListener("orientationchange", debouncedResize);
+      window.removeEventListener("resize", debouncedResize);
+      prefersReduced.removeEventListener?.("change", onReducedMotionChange);
+      dprQuery.removeEventListener?.("change", onDprChange);
+      if (rafId) cancelAnimationFrame(rafId);
     };
-  }, []);                                                                    // run once after mount
+  }, []);
 
-  /* ===========================
+  /* ---------------------------
    * Markup
-   * =========================== */
+   * --------------------------- */
   return (
     <>
-      {/* Accessibility skip link helps keyboard users jump to main content */}
-      <a className="skip-link" href="#main">                                {/* styled via global CSS */}
-        Skip to content
-      </a>
+      <a className="skip-link" href="#main">Skip to content</a>
+      <canvas id="bg-canvas" ref={canvasRef} aria-hidden="true" />
 
-      {/* Fullscreen animated background */}
-      <canvas id="bg-canvas" ref={canvasRef} aria-hidden="true" />          {/* purely decorative */}
-
-      {/* Header retained to hold a logo later (currently empty) */}
       <header>
-        <div className="container">                                         {/* keep structure for future nav/brand */}
-          {/* (optional) add a logo or leave empty */}
-        </div>
+        <div className="container">{/* logo/nav optional */}</div>
       </header>
 
-      {/* Main hero copy */}
-      <main id="main" className="container" tabIndex={-1}>                  {/* tabIndex enables focus via skip link */}
+      <main id="main" className="container" tabIndex={-1}>
         <section className="hero" aria-labelledby="hero-title">
-          <div className="highlight">Your Dream Companion</div>             {/* small tag above title */}
-          <h1 id="hero-title" className="title">
-            DREAMI
-          </h1>
+          <div className="highlight">Your Dream Companion</div>
+          <h1 id="hero-title" className="title">DREAMI</h1>
           <p className="subheader">
             Capture, analyze, and interpret your dreams over a lifetime.
           </p>
         </section>
       </main>
 
-      {/* Fallback: hide canvas if JS disabled */}
       <noscript>
-        <style>{`#bg-canvas{display:none}`}</style>                          {/* prevents empty box when no JS */}
+        <style>{`#bg-canvas{display:none}`}</style>
       </noscript>
     </>
   );

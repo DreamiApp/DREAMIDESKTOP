@@ -285,7 +285,7 @@ export default function Home() {
           {/* Hero CTA: opens Calendly in a new tab */}
           <div className="hero-actions">
             <Link
-              href="https://calendly.com/dreamiapp/30min"
+              href="https://calendly.com/YOUR-ORG/dreami-demo"
               target="_blank"
               rel="noopener noreferrer"
               aria-label="Book a Dreami demo on Calendly"
@@ -301,41 +301,70 @@ export default function Home() {
         <style>{`#bg-canvas{display:none}`}</style>
       </noscript>
 
-      {/* Scoped styles for the demo button (unchanged) */}
+      {/* Scoped styles for the demo button — refined look */}
       <style jsx>{`
         .hero-actions{
           margin-top: 24px;
           display: flex;
           justify-content: center;
         }
+
         .demo-btn{
-          display:inline-flex;
-          align-items:center;
-          justify-content:center;
-          padding: 12px 18px;
-          font-weight: 600;
-          letter-spacing: 0.02em;
-          border-radius: 9999px;
-          border: 1px solid var(--btn-border, rgba(255,255,255,0.55));
-          background: linear-gradient(180deg, rgba(255,255,255,0.12), rgba(255,255,255,0.04));
-          box-shadow: 0 6px 24px rgba(0,0,0,0.35), inset 0 0 0 1px rgba(255,255,255,0.06);
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          gap: 10px;
+          padding: 12px 20px;
+          border-radius: 6px;
+
+          /* Gradient border + inky core for high contrast */
+          background:
+            linear-gradient(#151127, #151127) padding-box,
+            linear-gradient(90deg, var(--highlight-start), var(--highlight-end)) border-box;
+          border: 1px solid transparent;
           color: #fff;
           text-decoration: none;
-          backdrop-filter: blur(6px);
-          -webkit-backdrop-filter: blur(6px);
-          transition: transform .15s ease, box-shadow .2s ease, background-color .2s ease, opacity .2s ease;
+          font-weight: 800;
+          letter-spacing: 0.015em;
+          line-height: 1;
+          min-height: 44px;
+
+          /* Subtle depth */
+          box-shadow:
+            0 1px 0 rgba(255,255,255,0.06) inset,
+            0 8px 22px rgba(0,0,0,0.35);
+
+          transition:
+            transform .12s ease,
+            box-shadow .2s ease,
+            filter .2s ease,
+            opacity .2s ease;
         }
+
         .demo-btn:hover{
           transform: translateY(-1px);
-          box-shadow: 0 10px 28px rgba(0,0,0,0.45), inset 0 0 0 1px rgba(255,255,255,0.1);
+          filter: brightness(1.02);
+          box-shadow:
+            0 1px 0 rgba(255,255,255,0.08) inset,
+            0 12px 28px rgba(0,0,0,0.45);
         }
+
         .demo-btn:active{
           transform: translateY(0);
-          opacity: 0.95;
+          filter: none;
         }
+
         .demo-btn:focus-visible{
-          outline: 2px solid #fff;
-          outline-offset: 3px;
+          outline: none;
+          box-shadow:
+            0 0 0 2px rgba(255,255,255,.35),
+            0 0 0 5px color-mix(in oklab, var(--highlight-start) 65%, transparent),
+            0 10px 26px rgba(0,0,0,.5);
+        }
+
+        /* Reduced motion: keep it calm */
+        @media (prefers-reduced-motion: reduce){
+          .demo-btn{ transition: none; }
         }
       `}</style>
     </>

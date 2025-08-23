@@ -38,9 +38,9 @@ body{
     radial-gradient(1200px 600px at 75% -10%, rgba(100,60,200,0.15), transparent 60%),
     radial-gradient(900px 500px at 10% 120%, rgba(180,130,230,0.1), transparent 60%),
     linear-gradient(180deg, var(--bg1), var(--bg2) 40%, var(--bg3));
-  background-color: var(--bg1);   /* solid fallback to avoid flashes */
+  background-color: var(--bg1);
   background-repeat:no-repeat;
-  background-attachment:scroll;   /* avoids iOS jitter */
+  background-attachment:scroll;
   background-size:auto, auto, 100% 100%;
 
   -webkit-font-smoothing:antialiased;
@@ -68,23 +68,20 @@ body::before{
 /* ===== Canvas base layer — extends into safe areas (no black gutters) ===== */
 #bg-canvas{
   position: fixed;
-  /* extend into notches/home-bar using safe-area insets */
   left:  calc(-1 * env(safe-area-inset-left));
   top:   calc(-1 * env(safe-area-inset-top));
   width:  calc(100vw + env(safe-area-inset-left) + env(safe-area-inset-right));
   height: calc(100svh + env(safe-area-inset-top) + env(safe-area-inset-bottom));
   z-index: 0;
   display: block;
-  pointer-events: none; /* never intercept clicks/touches */
+  pointer-events: none;
 }
-/* Prefer dynamic viewport units when supported */
 @supports (width: 100dvw){
   #bg-canvas{
     width:  calc(100dvw + env(safe-area-inset-left) + env(safe-area-inset-right));
     height: calc(100dvh + env(safe-area-inset-top) + env(safe-area-inset-bottom));
   }
 }
-/* Fallback for browsers that only support lv* */
 @supports (width: 100lvw){
   #bg-canvas{
     width:  calc(100lvw + env(safe-area-inset-left) + env(safe-area-inset-right));
@@ -131,7 +128,7 @@ nav[aria-label="Primary"]{
 .hero{
   display:grid; place-items:center; text-align:center; padding:136px 0 120px;
   position:relative;
-  min-height: 60svh; /* similar feel on tall/short screens */
+  min-height: 60svh;
 }
 @supports (min-height: 60dvh){
   .hero{ min-height: 60dvh; }
@@ -158,7 +155,7 @@ nav[aria-label="Primary"]{
   text-wrap:balance;
 }
 
-/* === Demo button (refined colors & border gradient core) === */
+/* === Demo button (nicer: gradient border, inky core, sheen, 6px) === */
 .hero-actions{
   margin-top:22px;
   display:flex;
@@ -167,51 +164,79 @@ nav[aria-label="Primary"]{
   gap:12px;
 }
 .demo-btn{
+  position: relative;
   display:inline-flex;
   align-items:center;
   gap:10px;
   padding:12px 20px;
   border-radius:6px;
 
-  /* Gradient border + inky core for contrast */
+  /* Gradient border + inky core; animated border sweep on hover */
   background:
-    linear-gradient(#151127, #151127) padding-box,
+    linear-gradient(#141126, #141126) padding-box,
     linear-gradient(90deg, var(--highlight-start), var(--highlight-end)) border-box;
+  background-size: 100% 100%, 200% 100%;
+  background-position: 0 0, 0 0;
+
   border:1px solid transparent;
   color:#fff;
-
   text-decoration:none;
   font-weight:800;
   letter-spacing:.015em;
   line-height:1;
   min-height:44px;
 
-  /* Subtle depth */
-  box-shadow:
-    0 1px 0 rgba(255,255,255,0.06) inset,
-    0 8px 22px rgba(0,0,0,.35);
-
-  transition: transform .12s ease, filter .2s ease, box-shadow .2s ease, opacity .2s ease;
-}
-.demo-btn:hover{
-  transform: translateY(-1px);
-  filter: brightness(1.02);
+  /* Depth */
   box-shadow:
     0 1px 0 rgba(255,255,255,0.08) inset,
     0 12px 28px rgba(0,0,0,.45);
+
+  transition:
+    transform .12s ease,
+    box-shadow .25s ease,
+    filter .25s ease,
+    background-position .6s ease;
+  overflow: hidden; /* for sheen */
 }
+
+/* Subtle sheen sweep */
+.demo-btn::before{
+  content:"";
+  position:absolute; inset:-1px;
+  border-radius:inherit;
+  background: linear-gradient(
+    120deg,
+    transparent 0%,
+    rgba(255,255,255,.08) 30%,
+    rgba(255,255,255,.16) 45%,
+    rgba(255,255,255,.08) 60%,
+    transparent 100%
+  );
+  transform: translateX(-120%);
+  transition: transform .6s ease;
+  pointer-events:none;
+}
+.demo-btn:hover::before{ transform: translateX(120%); }
+
+.demo-btn:hover{
+  transform: translateY(-1px);
+  filter: brightness(1.02);
+  background-position: 0 0, 100% 0; /* sweep the border gradient */
+}
+
 .demo-btn:active{
   transform: translateY(0);
   filter: none;
 }
+
 .demo-btn:focus-visible{
-  outline: 2px solid rgba(255,255,255,.95);
-  outline-offset: 3px;
+  outline: none;
   box-shadow:
-    0 0 0 2px rgba(255,255,255,.35),
-    0 0 0 5px color-mix(in oklab, var(--highlight-start) 65%, transparent),
+    0 0 0 2px rgba(255,255,255,.32),
+    0 0 0 6px color-mix(in oklab, var(--highlight-end) 55%, transparent),
     0 10px 26px rgba(0,0,0,.5);
 }
+
 /* Icon (if present) */
 .demo-btn .icon{
   width:18px; height:18px;
@@ -240,7 +265,7 @@ nav[aria-label="Primary"]{
   appearance:none; border:1px solid #fff; padding:14px 24px; font-size:17px; font-weight:750;
   border-radius:10px; cursor:pointer; background:#fff; color:#111;
   transition:transform .04s ease, opacity .2s ease, box-shadow .2s ease; display:inline-block;
-  min-height:44px; /* accessible touch target */
+  min-height:44px;
 }
 .cta:focus-visible{outline:2px solid rgba(201,167,255,.75); outline-offset:2px}
 .cta:active{transform:translateY(1px)}
@@ -289,7 +314,7 @@ nav[aria-label="Primary"]{
 /* Toast */
 .toast{
   position:fixed; left:50%;
-  bottom:calc(24px + env(safe-area-inset-bottom)); /* off the home bar */
+  bottom:calc(24px + env(safe-area-inset-bottom));
   transform:translateX(-50%) translateY(20px);
   background:var(--surface); border:1px solid rgba(255,255,255,0.14); color:#fff;
   border-radius:12px; padding:12px 16px; opacity:0; pointer-events:none; z-index:6;
@@ -300,7 +325,11 @@ nav[aria-label="Primary"]{
 .toast.err{border-color:rgba(239,68,68,.5)}
 
 /* Prefs & small */
-@media (prefers-reduced-motion: reduce){ .spinner{animation:none} }
+@media (prefers-reduced-motion: reduce){
+  .spinner{animation:none}
+  .demo-btn{ transition: none; }
+  .demo-btn::before{ transition: none; }
+}
 @media (max-width:520px){
   .cta{width:100%; text-align:center}
   .form-row{flex-direction:column}

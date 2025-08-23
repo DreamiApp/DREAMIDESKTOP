@@ -121,7 +121,7 @@ export default function Home() {
         tw: Math.random() * Math.PI * 2,
       }));
 
-      // Landscape-friendly glow: scale by diagonal so wide screens still feel filled
+      // Scale glow by diagonal so landscape still feels filled
       const nebulaCount = 5;
       const diag = Math.hypot(w, h);
       nebulas = Array.from({ length: nebulaCount }, (): Nebula => ({
@@ -144,7 +144,7 @@ export default function Home() {
     function resize() {
       dpr = currentDPRCap();
 
-      // IMPORTANT: measure the *rendered* size (includes safe-area bleed from CSS)
+      // Measure the rendered size so we honor safe-area bleed from CSS
       const rect = cv.getBoundingClientRect();
       const cssW = Math.max(1, Math.round(rect.width));
       const cssH = Math.max(1, Math.round(rect.height));
@@ -152,7 +152,7 @@ export default function Home() {
       cv.width  = Math.floor(cssW * dpr);
       cv.height = Math.floor(cssH * dpr);
 
-      // Do NOT set cv.style.width/height here — CSS controls those to cover safe areas
+      // Don't set style width/height; CSS controls those to cover safe areas
       w = cv.width;
       h = cv.height;
 

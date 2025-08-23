@@ -39,14 +39,14 @@ export const metadata: Metadata = {
     title: "Dreami — Your Dream Companion",
     description:
       "Capture, analyze, and interpret your dreams over a lifetime. Private by design.",
-    images: [{ url: "/og.png", width: 1200, height: 630 }],
+    images: [{ url: "/Dreami.png", width: 1200, height: 630 }],
   },
   twitter: {
     card: "summary_large_image",
     title: "Dreami — Your Dream Companion",
     description:
       "Capture, analyze, and interpret your dreams over a lifetime. Private by design.",
-    images: ["/og.png"],
+    images: ["/Dreami.png"],
   },
   // Favicons Google can use in search results
   icons: {
@@ -56,7 +56,7 @@ export const metadata: Metadata = {
       { url: "/Dreami.png", type: "image/png", sizes: "48x48" },  // Google prefers ≥48px
       { url: "/Dreami.png", type: "image/png", sizes: "64x64" },
       { url: "/Dreami.png", type: "image/png", sizes: "192x192" },
-      { url: "/favicon.ico", type: "image/x-icon" },              // fallback .ico
+      { url: "/Dreami.png", type: "image/x-icon" },             
     ],
     apple: [{ url: "/Dreami.png", sizes: "180x180", type: "image/png" }],
     shortcut: ["/Dreami.png"],

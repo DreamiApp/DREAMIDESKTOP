@@ -32,6 +32,7 @@ export const metadata: Metadata = {
   description:
     "Capture, analyze, and interpret your dreams over a lifetime. Private by design.",
   alternates: { canonical: "/" },
+
   openGraph: {
     type: "website",
     url: "/",
@@ -39,28 +40,27 @@ export const metadata: Metadata = {
     title: "Dreami — Your Dream Companion",
     description:
       "Capture, analyze, and interpret your dreams over a lifetime. Private by design.",
-    images: [{ url: "/Dreami.png", width: 1200, height: 630 }],
+    images: [{ url: "/og.png", width: 1200, height: 630 }],
   },
   twitter: {
     card: "summary_large_image",
     title: "Dreami — Your Dream Companion",
     description:
       "Capture, analyze, and interpret your dreams over a lifetime. Private by design.",
-    images: ["/Dreami.png"],
+    images: ["/og.png"],
   },
-  // Favicons Google can use in search results
+
+  // Favicons for browsers & Google SERP
   icons: {
     icon: [
-      // If you only have /Dreami.png, we can reference it for multiple sizes
-      { url: "/Dreami.png", type: "image/png", sizes: "32x32" },
-      { url: "/Dreami.png", type: "image/png", sizes: "48x48" },  // Google prefers ≥48px
-      { url: "/Dreami.png", type: "image/png", sizes: "64x64" },
-      { url: "/Dreami.png", type: "image/png", sizes: "192x192" },
-      { url: "/Dreami.png", type: "image/x-icon" },             
+      { url: "/Dreami.png?v=2", type: "image/png", sizes: "48x48" },   // Google prefers ≥48px
+      { url: "/Dreami.png?v=2", type: "image/png", sizes: "192x192" }, // larger PNG
+      { url: "/favicon.ico", type: "image/x-icon" },                   // real ICO fallback
     ],
-    apple: [{ url: "/Dreami.png", sizes: "180x180", type: "image/png" }],
-    shortcut: ["/Dreami.png"],
+    apple: [{ url: "/Dreami.png?v=2", sizes: "180x180", type: "image/png" }],
+    shortcut: ["/favicon.ico"],
   },
+
   manifest: "/site.webmanifest",
   robots: {
     index: true,
@@ -78,7 +78,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className="no-js">
       <body className={inter.className}>
-        {/* Organization schema: brand logo (use Dreami.png) */}
+        {/* Organization schema: brand logo (absolute URL) */}
         <Script id="schema-organization" type="application/ld+json">
           {JSON.stringify({
             "@context": "https://schema.org",

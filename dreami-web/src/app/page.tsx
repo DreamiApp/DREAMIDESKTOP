@@ -2,6 +2,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import Link from "next/link";
 
 /* -------------------- Local types -------------------- */
 type Star = {
@@ -280,12 +281,63 @@ export default function Home() {
           <p className="subheader">
             Capture, analyze, and interpret your dreams over a lifetime.
           </p>
+
+          {/* Hero CTA: opens Calendly in a new tab */}
+          <div className="hero-actions">
+            <Link
+              href="https://calendly.com/dreamiapp/30min"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Book a Dreami demo on Calendly"
+              className="demo-btn"
+            >
+              Book a demo
+            </Link>
+          </div>
         </section>
       </main>
 
       <noscript>
         <style>{`#bg-canvas{display:none}`}</style>
       </noscript>
+
+      {/* Scoped styles for the demo button (unchanged) */}
+      <style jsx>{`
+        .hero-actions{
+          margin-top: 24px;
+          display: flex;
+          justify-content: center;
+        }
+        .demo-btn{
+          display:inline-flex;
+          align-items:center;
+          justify-content:center;
+          padding: 12px 18px;
+          font-weight: 600;
+          letter-spacing: 0.02em;
+          border-radius: 9999px;
+          border: 1px solid var(--btn-border, rgba(255,255,255,0.55));
+          background: linear-gradient(180deg, rgba(255,255,255,0.12), rgba(255,255,255,0.04));
+          box-shadow: 0 6px 24px rgba(0,0,0,0.35), inset 0 0 0 1px rgba(255,255,255,0.06);
+          color: #fff;
+          text-decoration: none;
+          backdrop-filter: blur(6px);
+          -webkit-backdrop-filter: blur(6px);
+          transition: transform .15s ease, box-shadow .2s ease, background-color .2s ease, opacity .2s ease;
+        }
+        .demo-btn:hover{
+          transform: translateY(-1px);
+          box-shadow: 0 10px 28px rgba(0,0,0,0.45), inset 0 0 0 1px rgba(255,255,255,0.1);
+        }
+        .demo-btn:active{
+          transform: translateY(0);
+          opacity: 0.95;
+        }
+        .demo-btn:focus-visible{
+          outline: 2px solid #fff;
+          outline-offset: 3px;
+        }
+      `}</style>
     </>
   );
 }

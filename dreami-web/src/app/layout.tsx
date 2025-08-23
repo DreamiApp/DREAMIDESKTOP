@@ -30,7 +30,7 @@ export const metadata: Metadata = {
     template: "%s · Dreami",
   },
   description:
-    "Capture, analyze, and interpret your dreams over a lifetime. Private by design.",
+    "Capture, analyze, and interpret your dreams over a lifetime.",
   alternates: { canonical: "/" },
 
   openGraph: {
@@ -39,15 +39,15 @@ export const metadata: Metadata = {
     siteName: "Dreami",
     title: "Dreami — Your Dream Companion",
     description:
-      "Capture, analyze, and interpret your dreams over a lifetime. Private by design.",
-    images: [{ url: "/og.png", width: 1200, height: 630 }],
+      "Capture, analyze, and interpret your dreams over a lifetime.",
+    images: [{ url: "/Dreami.png", width: 1200, height: 630 }],
   },
   twitter: {
     card: "summary_large_image",
     title: "Dreami — Your Dream Companion",
     description:
-      "Capture, analyze, and interpret your dreams over a lifetime. Private by design.",
-    images: ["/og.png"],
+      "Capture, analyze, and interpret your dreams over a lifetime.",
+    images: ["/Dreami.png"],
   },
 
   // Use the *existing* Dreami.png so we avoid 404s.

@@ -158,6 +158,80 @@ nav[aria-label="Primary"]{
   text-wrap:balance;
 }
 
+/* === Demo button (refined colors & border gradient core) === */
+.hero-actions{
+  margin-top:22px;
+  display:flex;
+  justify-content:center;
+  flex-wrap:wrap;
+  gap:12px;
+}
+.demo-btn{
+  display:inline-flex;
+  align-items:center;
+  gap:10px;
+  padding:12px 20px;
+  border-radius:6px;
+
+  /* Gradient border + inky core for contrast */
+  background:
+    linear-gradient(#151127, #151127) padding-box,
+    linear-gradient(90deg, var(--highlight-start), var(--highlight-end)) border-box;
+  border:1px solid transparent;
+  color:#fff;
+
+  text-decoration:none;
+  font-weight:800;
+  letter-spacing:.015em;
+  line-height:1;
+  min-height:44px;
+
+  /* Subtle depth */
+  box-shadow:
+    0 1px 0 rgba(255,255,255,0.06) inset,
+    0 8px 22px rgba(0,0,0,.35);
+
+  transition: transform .12s ease, filter .2s ease, box-shadow .2s ease, opacity .2s ease;
+}
+.demo-btn:hover{
+  transform: translateY(-1px);
+  filter: brightness(1.02);
+  box-shadow:
+    0 1px 0 rgba(255,255,255,0.08) inset,
+    0 12px 28px rgba(0,0,0,.45);
+}
+.demo-btn:active{
+  transform: translateY(0);
+  filter: none;
+}
+.demo-btn:focus-visible{
+  outline: 2px solid rgba(255,255,255,.95);
+  outline-offset: 3px;
+  box-shadow:
+    0 0 0 2px rgba(255,255,255,.35),
+    0 0 0 5px color-mix(in oklab, var(--highlight-start) 65%, transparent),
+    0 10px 26px rgba(0,0,0,.5);
+}
+/* Icon (if present) */
+.demo-btn .icon{
+  width:18px; height:18px;
+  opacity:.95;
+}
+
+/* Optional: low-key outline variant for nav usage */
+.demo-btn--ghost{
+  background: transparent;
+  color:#fff;
+  border:1px solid var(--btn-border);
+  box-shadow:none;
+  border-radius:6px;
+}
+.demo-btn--ghost:hover{
+  background: rgba(255,255,255,.06);
+  transform: translateY(-1px);
+}
+
+/* Existing CTAs */
 .cta-row{
   display:flex; justify-content:center; margin-top:22px;
   flex-wrap:wrap; gap:12px;

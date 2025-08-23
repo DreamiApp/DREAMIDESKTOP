@@ -45,12 +45,10 @@ export default function Home() {
     const prevent: EventListener = (e) => e.preventDefault();
     const nonPassive: AddEventListenerOptions = { passive: false };
 
-    // Safari gesture events exist at runtime even if not in TS event map
     document.addEventListener("gesturestart", prevent, nonPassive);
     document.addEventListener("gesturechange", prevent, nonPassive);
     document.addEventListener("gestureend", prevent, nonPassive);
 
-    // Prevent double-tap zoom
     let last = 0;
     const onTouchEnd = (e: TouchEvent) => {
       const now = Date.now();
@@ -73,12 +71,12 @@ export default function Home() {
   useEffect(() => {
     document.body.classList.remove("no-js");
 
-    const cv = canvasRef.current;
-    if (!cv) return;
+    const canvasEl = canvasRef.current;
+    if (!(canvasEl instanceof HTMLCanvasElement)) return;
 
-    const ctx = cv.getContext("2d", { alpha: true, desynchronized: true });
-    if (!ctx) return;
-    const c = ctx;
+    const context = canvasEl.getContext("2d", { alpha: true, desynchronized: true });
+    if (!context) return;
+    const ctx: CanvasRenderingContext2D = context;
 
     const prefersReduced = matchMedia("(prefers-reduced-motion: reduce)");
     let reduceMotion = prefersReduced.matches;
@@ -92,19 +90,20 @@ export default function Home() {
     const onReducedMotionChange = () => {
       reduceMotion = prefersReduced.matches;
       if (reduceMotion) {
-        c.clearRect(0, 0, w, h);
+        ctx.clearRect(0, 0, w, h);
         drawNebulas();
         drawStars(0);
         if (rafId) cancelAnimationFrame(rafId);
         rafId = null;
-      } else {
-        if (!rafId) rafId = requestAnimationFrame(step);
+      } else if (!rafId) {
+        rafId = requestAnimationFrame(step);
       }
     };
     prefersReduced.addEventListener?.("change", onReducedMotionChange);
 
     function currentDPRCap() {
-      const smallScreen = (document.documentElement.clientWidth || window.innerWidth) <= 640;
+      const smallScreen =
+        (document.documentElement.clientWidth || window.innerWidth) <= 640;
       return Math.min(window.devicePixelRatio || 1, smallScreen ? 1.5 : 2);
     }
 
@@ -113,7 +112,6 @@ export default function Home() {
       const vh = Math.round(window.visualViewport?.height ?? window.innerHeight);
       const area = vw * vh;
 
-      // Consistent density
       const starCount = Math.max(80, Math.floor(area / 11000));
       stars = Array.from({ length: starCount }, (): Star => ({
         x: Math.random() * w,
@@ -125,13 +123,12 @@ export default function Home() {
         tw: Math.random() * Math.PI * 2,
       }));
 
-      // Scale glow by diagonal so landscape still feels filled
       const nebulaCount = 5;
       const diag = Math.hypot(w, h);
       nebulas = Array.from({ length: nebulaCount }, (): Nebula => ({
         x: Math.random() * w,
         y: Math.random() * h,
-        r: (Math.random() * 0.22 + 0.18) * diag,
+        r: (Math.random() * 0.22 + 0.18) * diag, // diagonal-based radius fills landscape
         vx: (Math.random() - 0.5) * 0.03,
         vy: (Math.random() - 0.5) * 0.03,
         hue: 255 + Math.random() * 60,
@@ -139,7 +136,7 @@ export default function Home() {
       }));
 
       if (reduceMotion) {
-        c.clearRect(0, 0, w, h);
+        ctx.clearRect(0, 0, w, h);
         drawNebulas();
         drawStars(0);
       }
@@ -148,19 +145,18 @@ export default function Home() {
     function resize() {
       dpr = currentDPRCap();
 
-      // Measure rendered size so we honor safe-area bleed from CSS
-      const rect = cv.getBoundingClientRect();
+      // Measure rendered size (CSS fills safe areas)
+      const rect = canvasEl.getBoundingClientRect();
       const cssW = Math.max(1, Math.round(rect.width));
       const cssH = Math.max(1, Math.round(rect.height));
 
-      cv.width = Math.floor(cssW * dpr);
-      cv.height = Math.floor(cssH * dpr);
+      canvasEl.width = Math.floor(cssW * dpr);
+      canvasEl.height = Math.floor(cssH * dpr);
 
-      // CSS controls style width/height to cover safe areas
-      w = cv.width;
-      h = cv.height;
+      w = canvasEl.width;
+      h = canvasEl.height;
 
-      c.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
       initSky();
     }
 
@@ -174,17 +170,17 @@ export default function Home() {
         if (n.y < -n.r) n.y = h + n.r;
         if (n.y > h + n.r) n.y = -n.r;
 
-        const g = c.createRadialGradient(n.x, n.y, 0, n.x, n.y, n.r);
+        const g = ctx.createRadialGradient(n.x, n.y, 0, n.x, n.y, n.r);
         g.addColorStop(0, `hsla(${n.hue}, 70%, 70%, ${n.alpha})`);
         g.addColorStop(1, `hsla(${n.hue}, 70%, 70%, 0)`);
 
-        c.globalCompositeOperation = "screen";
-        c.fillStyle = g;
-        c.beginPath();
-        c.arc(n.x, n.y, n.r, 0, Math.PI * 2);
-        c.fill();
+        ctx.globalCompositeOperation = "screen";
+        ctx.fillStyle = g;
+        ctx.beginPath();
+        ctx.arc(n.x, n.y, n.r, 0, Math.PI * 2);
+        ctx.fill();
       }
-      c.globalCompositeOperation = "lighter";
+      ctx.globalCompositeOperation = "lighter";
     }
 
     function drawStars(t: number) {
@@ -200,16 +196,16 @@ export default function Home() {
         const tw = 0.5 + 0.5 * Math.sin(t / 1400 + s.tw);
         const a = (0.2 + 0.45 * s.z) * tw;
 
-        c.beginPath();
-        c.fillStyle = `rgba(255,255,255,${a})`;
-        c.arc(s.x, s.y, s.r * s.z, 0, Math.PI * 2);
-        c.fill();
+        ctx.beginPath();
+        ctx.fillStyle = `rgba(255,255,255,${a})`;
+        ctx.arc(s.x, s.y, s.r * s.z, 0, Math.PI * 2);
+        ctx.fill();
       }
     }
 
     function step(t = 0) {
       if (paused || reduceMotion) return;
-      c.clearRect(0, 0, w, h);
+      ctx.clearRect(0, 0, w, h);
       drawNebulas();
       drawStars(t);
       rafId = requestAnimationFrame(step);
@@ -228,7 +224,9 @@ export default function Home() {
     window.addEventListener("orientationchange", debouncedResize);
     window.addEventListener("resize", debouncedResize);
 
-    let dprQuery: MediaQueryList = matchMedia(`(resolution: ${window.devicePixelRatio}dppx)`);
+    let dprQuery: MediaQueryList = matchMedia(
+      `(resolution: ${window.devicePixelRatio}dppx)`
+    );
     const onDprChange = () => {
       dprQuery.removeEventListener?.("change", onDprChange);
       dprQuery = matchMedia(`(resolution: ${window.devicePixelRatio}dppx)`);
@@ -281,7 +279,9 @@ export default function Home() {
         </section>
       </main>
 
-      <noscript><style>{`#bg-canvas{display:none}`}</style></noscript>
+      <noscript>
+        <style>{`#bg-canvas{display:none}`}</style>
+      </noscript>
     </>
   );
 }

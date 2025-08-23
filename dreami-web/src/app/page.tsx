@@ -19,6 +19,7 @@ type Nebula = {
 
 export default function Home() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const landscapeRef = useRef<HTMLDivElement | null>(null);
 
   /* ---------------------------
    * Scroll lock (only on Home)
@@ -33,6 +34,94 @@ export default function Home() {
     return () => {
       document.body.style.overflow = prevOverflow;
       (document.body.style as any).overscrollBehavior = prevBehavior;
+    };
+  }, []);
+
+  /* ---------------------------------------------------------
+   * Try to lock to portrait where supported (Android/PWA only)
+   * --------------------------------------------------------- */
+  useEffect(() => {
+    const tryLock = async () => {
+      try {
+        const ori: any = (screen as any)?.orientation;
+        if (ori?.lock) await ori.lock("portrait");
+      } catch {
+        /* iOS Safari will ignore this */
+      }
+    };
+    // Orientation lock requires a user gesture
+    const onFirstInput = () => { tryLock(); };
+    window.addEventListener("pointerdown", onFirstInput, { once: true });
+    return () => window.removeEventListener("pointerdown", onFirstInput);
+  }, []);
+
+  /* ----------------------------------------
+   * Block zoom (pinch + double-tap) on iOS
+   * ---------------------------------------- */
+  useEffect(() => {
+    const prevent = (e: Event) => e.preventDefault();
+
+    // Safari gesture events (not in TS lib)
+    document.addEventListener("gesturestart" as any, prevent, { passive: false } as any);
+    document.addEventListener("gesturechange" as any, prevent, { passive: false } as any);
+    document.addEventListener("gestureend" as any, prevent, { passive: false } as any);
+
+    // Prevent double-tap zoom
+    let last = 0;
+    const onTouchEnd = (e: TouchEvent) => {
+      const now = Date.now();
+      if (now - last < 300) e.preventDefault();
+      last = now;
+    };
+    document.addEventListener("touchend", onTouchEnd, { passive: false });
+
+    return () => {
+      document.removeEventListener("gesturestart" as any, prevent as any);
+      document.removeEventListener("gesturechange" as any, prevent as any);
+      document.removeEventListener("gestureend" as any, prevent as any);
+      document.removeEventListener("touchend", onTouchEnd as any);
+    };
+  }, []);
+
+  /* ---------------------------------------------------
+   * Show overlay if a PHONE is in landscape (browser)
+   * --------------------------------------------------- */
+  useEffect(() => {
+    const el = landscapeRef.current;
+    if (!el) return;
+
+    const isPhone = () =>
+      matchMedia("(hover: none) and (pointer: coarse)").matches;
+
+    const isLandscape = () =>
+      matchMedia("(orientation: landscape)").matches;
+
+    const smallViewport = () => {
+      const vh = Math.round(window.visualViewport?.height ?? window.innerHeight);
+      return vh <= 500; // guard to avoid tablets/desktops
+    };
+
+    const isStandalonePWA = () =>
+      matchMedia("(display-mode: standalone)").matches;
+
+    const update = () => {
+      const show = isPhone() && isLandscape() && smallViewport() && !isStandalonePWA();
+      el.style.display = show ? "grid" : "none";
+    };
+
+    update();
+
+    const vv = window.visualViewport;
+    vv?.addEventListener("resize", update);
+    vv?.addEventListener("scroll", update);
+    window.addEventListener("resize", update);
+    window.addEventListener("orientationchange", update);
+
+    return () => {
+      vv?.removeEventListener("resize", update);
+      vv?.removeEventListener("scroll", update);
+      window.removeEventListener("resize", update);
+      window.removeEventListener("orientationchange", update);
     };
   }, []);
 
@@ -236,6 +325,43 @@ export default function Home() {
     <>
       <a className="skip-link" href="#main">Skip to content</a>
       <canvas id="bg-canvas" ref={canvasRef} aria-hidden="true" />
+
+      {/* Landscape overlay (no extra CSS required) */}
+      <div
+        id="landscape-blocker"
+        ref={landscapeRef}
+        aria-hidden="true"
+        style={{
+          position: "fixed",
+          inset: 0,
+          display: "none",
+          zIndex: 9999,
+          alignItems: "center",
+          justifyContent: "center",
+          pointerEvents: "none",
+        }}
+      >
+        <div
+          className="lb-card"
+          style={{
+            background: "rgba(4,2,8,0.96)",
+            border: "1px solid rgba(255,255,255,0.12)",
+            borderRadius: 16,
+            padding: "18px 20px",
+            textAlign: "center",
+            color: "#fff",
+            backdropFilter: "blur(6px)",
+            pointerEvents: "auto",
+          }}
+        >
+          <h2 style={{ margin: "0 0 6px", fontSize: 18, letterSpacing: ".04em" }}>
+            Best in portrait
+          </h2>
+          <p style={{ margin: 0, color: "#D6D6E3", fontSize: 14 }}>
+            Please rotate your device.
+          </p>
+        </div>
+      </div>
 
       <header>
         <div className="container">{/* logo/nav optional */}</div>

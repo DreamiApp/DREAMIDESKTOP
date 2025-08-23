@@ -7,7 +7,14 @@ import type { Metadata, Viewport } from "next";
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  viewportFit: "cover", // iOS: allow content under notch/home bar
+  maximumScale: 1,
+  minimumScale: 1,
+  userScalable: false,      // disable pinch/double-tap zoom
+  viewportFit: "cover",     // iOS: extend under notch/home bar
+  themeColor: [
+    { media: "(prefers-color-scheme: dark)", color: "#040208" },
+    { media: "(prefers-color-scheme: light)", color: "#040208" },
+  ],
 };
 
 const inter = Inter({
@@ -24,9 +31,7 @@ export const metadata: Metadata = {
   },
   description:
     "Capture, analyze, and interpret your dreams over a lifetime. Private by design.",
-  alternates: {
-    canonical: "/",
-  },
+  alternates: { canonical: "/" },
   openGraph: {
     type: "website",
     url: "/",
@@ -46,13 +51,13 @@ export const metadata: Metadata = {
   // Favicons Google can use in search results (PNG ≥48px recommended)
   icons: {
     icon: [
-      { url: "/favicon-32.png", type: "image/png", sizes: "32x32" },
-      { url: "/favicon-48.png", type: "image/png", sizes: "48x48" }, // <- important for Google
-      { url: "/favicon-64.png", type: "image/png", sizes: "64x64" },
-      { url: "/favicon-192.png", type: "image/png", sizes: "192x192" },
+      { url: "/favicon.ico", type: "image/png", sizes: "32x32" },
+      { url: "/favicon.ico", type: "image/png", sizes: "48x48" }, // important for Google
+      { url: "/favicon.ico", type: "image/png", sizes: "64x64" },
+      { url: "/favicon.ico", type: "image/png", sizes: "192x192" },
       { url: "/favicon.ico", type: "image/x-icon" },
     ],
-    apple: [{ url: "/apple-touch-icon.png", sizes: "180x180" }],
+    apple: [{ url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
     shortcut: ["/favicon.ico"],
   },
   manifest: "/site.webmanifest",
@@ -61,10 +66,6 @@ export const metadata: Metadata = {
     follow: true,
     googleBot: { index: true, follow: true },
   },
-  themeColor: [
-    { media: "(prefers-color-scheme: dark)", color: "#040208" },
-    { media: "(prefers-color-scheme: light)", color: "#040208" },
-  ],
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
@@ -86,22 +87,19 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             url: "https://www.dreamiapp.com/",
             logo: {
               "@type": "ImageObject",
-              url: "https://www.dreamiapp.com/logo-512.png", // square, transparent PNG
+              url: "https://www.dreamiapp.com/favicon.ico",
               width: 512,
               height: 512,
             },
             sameAs: [
-              // Optional: add your official profiles to reinforce brand identity
               // "https://twitter.com/yourhandle",
-              // "https://www.instagram.com/yourhandle",
-              // "https://www.linkedin.com/company/yourcompany",
+              "https://www.instagram.com/appdremai",
+              "https://www.linkedin.com/company/dreamiapp",
             ],
           })}
         </Script>
 
-        {/* (You can keep your SoftwareApplication JSON-LD if desired)
-            It’s fine to have multiple relevant JSON-LD blocks on /.
-        */}
+        {/* Optional: SoftwareApplication schema */}
         <Script id="schema-software-app" type="application/ld+json">
           {JSON.stringify({
             "@context": "https://schema.org",

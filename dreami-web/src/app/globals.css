@@ -12,12 +12,20 @@
   --surface-2:rgba(0,0,0,0.35);
   --ok:#14b8a6;
   --warn:#ef4444;
+
+  /* NEW: tell the browser we’re dark — better native UI contrast */
+  color-scheme: dark;
 }
 
 *{box-sizing:border-box}
 html,body{height:100%}
-html{-webkit-text-size-adjust:100%; text-size-adjust:100%}
 
+/* NEW: reduce double-tap/pinch zoom behavior on mobile */
+html{
+  -webkit-text-size-adjust:100%;
+  text-size-adjust:100%;
+  touch-action: manipulation;
+}
 body{
   margin:0; overflow-x:hidden;
   font-family:'Inter', system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
@@ -34,9 +42,15 @@ body{
   -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
   position:relative; font-synthesis-weight:none;
 
+  /* NEW: also set at runtime in page.tsx, but keep CSS fallback */
+  overscroll-behavior: none;
+
   /* keep edges off notches/home bars without changing layout */
   padding-left: env(safe-area-inset-left);
   padding-right: env(safe-area-inset-right);
+
+  /* optional: reduce tap highlight on iOS */
+  -webkit-tap-highlight-color: rgba(255,255,255,0.08);
 }
 
 /* Body vignette ABOVE canvas, BELOW content */
@@ -48,6 +62,8 @@ body::before{
 /* Canvas as base layer (iOS-safe) */
 #bg-canvas{
   position:fixed; inset:0; width:100vw; height:100svh; z-index:0; display:block;
+  /* NEW: ensure canvas never eats touches/clicks even if stacking changes */
+  pointer-events:none;
 }
 @supports (height: 100dvh){
   #bg-canvas{ height:100dvh; }

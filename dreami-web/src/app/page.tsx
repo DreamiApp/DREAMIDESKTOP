@@ -25,14 +25,14 @@ export default function Home() {
    * --------------------------- */
   useEffect(() => {
     const prevOverflow = document.body.style.overflow;
-    const prevBehavior = document.body.style.overscrollBehavior;
+    const prevBehavior = (document.body.style as any).overscrollBehavior;
 
-    document.body.style.overflow = "hidden";            // disable scroll
-    document.body.style.overscrollBehavior = "none";    // stop iOS bounce
+    document.body.style.overflow = "hidden";              // disable scroll
+    (document.body.style as any).overscrollBehavior = "none"; // stop iOS bounce
 
     return () => {
       document.body.style.overflow = prevOverflow;
-      document.body.style.overscrollBehavior = prevBehavior;
+      (document.body.style as any).overscrollBehavior = prevBehavior;
     };
   }, []);
 
@@ -45,17 +45,23 @@ export default function Home() {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    // TS-safe: narrow after null check (no 'possibly null' error)
-    const ctx = canvas.getContext("2d", { alpha: true, desynchronized: true });
-    if (!ctx) return;
+    const ctxMaybe = canvas.getContext("2d", { alpha: true, desynchronized: true });
+    if (!ctxMaybe) return;
+    const c = ctxMaybe; // <-- Non-null, use this everywhere below
 
     // Respect reduced motion (live)
     let prefersReduced = matchMedia("(prefers-reduced-motion: reduce)");
     let reduceMotion = prefersReduced.matches;
+    let stars: Star[] = [];
+    let nebulas: Nebula[] = [];
+    let w = 0, h = 0, dpr = 1;
+    let rafId: number | null = null;
+    let paused = false;
+
     const onReducedMotionChange = () => {
       reduceMotion = prefersReduced.matches;
       if (reduceMotion) {
-        ctx.clearRect(0, 0, w, h);
+        c.clearRect(0, 0, w, h);
         drawNebulas();
         drawStars(0);
         if (rafId) cancelAnimationFrame(rafId);
@@ -65,13 +71,6 @@ export default function Home() {
       }
     };
     prefersReduced.addEventListener?.("change", onReducedMotionChange);
-
-    // Simulation state
-    let stars: Star[] = [];
-    let nebulas: Nebula[] = [];
-    let w = 0, h = 0, dpr = 1;
-    let rafId: number | null = null;
-    let paused = false;
 
     function initSky() {
       const vw = document.documentElement.clientWidth;
@@ -101,7 +100,7 @@ export default function Home() {
       }));
 
       if (reduceMotion) {
-        ctx.clearRect(0, 0, w, h);
+        c.clearRect(0, 0, w, h);
         drawNebulas();
         drawStars(0);
       }
@@ -126,8 +125,7 @@ export default function Home() {
       w = canvas.width;
       h = canvas.height;
 
-      // ts-expect-error – TS can't infer ctx type from getContext narrow; it's fine at runtime
-      (ctx as CanvasRenderingContext2D).setTransform(1, 0, 0, 1, 0, 0);
+      c.setTransform(1, 0, 0, 1, 0, 0);
       initSky();
     }
 
@@ -141,17 +139,17 @@ export default function Home() {
         if (n.y < -n.r) n.y = h + n.r;
         if (n.y > h + n.r) n.y = -n.r;
 
-        const g = (ctx as CanvasRenderingContext2D).createRadialGradient(n.x, n.y, 0, n.x, n.y, n.r);
+        const g = c.createRadialGradient(n.x, n.y, 0, n.x, n.y, n.r);
         g.addColorStop(0, `hsla(${n.hue}, 70%, 70%, ${n.alpha})`);
         g.addColorStop(1, `hsla(${n.hue}, 70%, 70%, 0)`);
 
-        (ctx as CanvasRenderingContext2D).globalCompositeOperation = "screen";
-        (ctx as CanvasRenderingContext2D).fillStyle = g;
-        (ctx as CanvasRenderingContext2D).beginPath();
-        (ctx as CanvasRenderingContext2D).arc(n.x, n.y, n.r, 0, Math.PI * 2);
-        (ctx as CanvasRenderingContext2D).fill();
+        c.globalCompositeOperation = "screen";
+        c.fillStyle = g;
+        c.beginPath();
+        c.arc(n.x, n.y, n.r, 0, Math.PI * 2);
+        c.fill();
       }
-      (ctx as CanvasRenderingContext2D).globalCompositeOperation = "lighter";
+      c.globalCompositeOperation = "lighter";
     }
 
     function drawStars(t: number) {
@@ -167,16 +165,16 @@ export default function Home() {
         const tw = 0.5 + 0.5 * Math.sin(t / 1400 + s.tw);
         const a = (0.2 + 0.45 * s.z) * tw;
 
-        (ctx as CanvasRenderingContext2D).beginPath();
-        (ctx as CanvasRenderingContext2D).fillStyle = `rgba(255,255,255,${a})`;
-        (ctx as CanvasRenderingContext2D).arc(s.x, s.y, s.r * s.z, 0, Math.PI * 2);
-        (ctx as CanvasRenderingContext2D).fill();
+        c.beginPath();
+        c.fillStyle = `rgba(255,255,255,${a})`;
+        c.arc(s.x, s.y, s.r * s.z, 0, Math.PI * 2);
+        c.fill();
       }
     }
 
     function step(t = 0) {
       if (paused || reduceMotion) return;
-      (ctx as CanvasRenderingContext2D).clearRect(0, 0, w, h);
+      c.clearRect(0, 0, w, h);
       drawNebulas();
       drawStars(t);
       rafId = requestAnimationFrame(step);

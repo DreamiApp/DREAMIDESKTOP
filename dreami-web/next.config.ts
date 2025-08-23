@@ -1,8 +1,13 @@
+// next.config.ts
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  eslint: { ignoreDuringBuilds: true },   // don't fail on ESLint errors
-  // typescript: { ignoreBuildErrors: true }, // optional
+  async redirects() {
+    return [
+      { source: "/waitlist", destination: "/", permanent: true },
+      { source: "/waitlist/:path*", destination: "/", permanent: true },
+    ];
+  },
 };
 
 export default nextConfig;

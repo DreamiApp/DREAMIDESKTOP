@@ -48,17 +48,18 @@ export const metadata: Metadata = {
       "Capture, analyze, and interpret your dreams over a lifetime. Private by design.",
     images: ["/og.png"],
   },
-  // Favicons Google can use in search results (PNG ≥48px recommended)
+  // Favicons Google can use in search results
   icons: {
     icon: [
-      { url: "/favicon.ico", type: "image/png", sizes: "32x32" },
-      { url: "/favicon.ico", type: "image/png", sizes: "48x48" }, // important for Google
-      { url: "/favicon.ico", type: "image/png", sizes: "64x64" },
-      { url: "/favicon.ico", type: "image/png", sizes: "192x192" },
-      { url: "/favicon.ico", type: "image/x-icon" },
+      // If you only have /Dreami.png, we can reference it for multiple sizes
+      { url: "/Dreami.png", type: "image/png", sizes: "32x32" },
+      { url: "/Dreami.png", type: "image/png", sizes: "48x48" },  // Google prefers ≥48px
+      { url: "/Dreami.png", type: "image/png", sizes: "64x64" },
+      { url: "/Dreami.png", type: "image/png", sizes: "192x192" },
+      { url: "/favicon.ico", type: "image/x-icon" },              // fallback .ico
     ],
-    apple: [{ url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
-    shortcut: ["/favicon.ico"],
+    apple: [{ url: "/Dreami.png", sizes: "180x180", type: "image/png" }],
+    shortcut: ["/Dreami.png"],
   },
   manifest: "/site.webmanifest",
   robots: {
@@ -77,7 +78,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className="no-js">
       <body className={inter.className}>
-        {/* Organization schema: helps Google pick your brand logo */}
+        {/* Organization schema: brand logo (use Dreami.png) */}
         <Script id="schema-organization" type="application/ld+json">
           {JSON.stringify({
             "@context": "https://schema.org",
@@ -87,12 +88,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             url: "https://www.dreamiapp.com/",
             logo: {
               "@type": "ImageObject",
-              url: "https://www.dreamiapp.com/favicon.ico",
+              url: "https://www.dreamiapp.com/Dreami.png",
               width: 512,
               height: 512,
             },
             sameAs: [
-              // "https://twitter.com/yourhandle",
               "https://www.instagram.com/appdremai",
               "https://www.linkedin.com/company/dreamiapp",
             ],

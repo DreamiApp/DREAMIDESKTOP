@@ -13,43 +13,46 @@
   --ok:#14b8a6;
   --warn:#ef4444;
 
-  /* NEW: tell the browser we’re dark — better native UI contrast */
+  /* Dark UI hints for the browser */
   color-scheme: dark;
 }
 
-*{box-sizing:border-box}
-html,body{height:100%}
+*{ box-sizing:border-box }
+html,body{ height:100% }
 
-/* NEW: reduce double-tap/pinch zoom behavior on mobile */
+/* Reduce accidental zooming; improve touch handling */
 html{
   -webkit-text-size-adjust:100%;
   text-size-adjust:100%;
   touch-action: manipulation;
 }
+
 body{
-  margin:0; overflow-x:hidden;
+  margin:0;
+  overflow-x:hidden;
   font-family:'Inter', system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
   color:var(--text);
-  /* same background, forced to be stable across sizes */
   background:
     radial-gradient(1200px 600px at 75% -10%, rgba(100,60,200,0.15), transparent 60%),
     radial-gradient(900px 500px at 10% 120%, rgba(180,130,230,0.1), transparent 60%),
     linear-gradient(180deg, var(--bg1), var(--bg2) 40%, var(--bg3));
-  background-color: var(--bg1);               /* solid fallback to avoid grey/white flashes */
+  background-color: var(--bg1);     /* solid fallback to avoid flashes */
   background-repeat:no-repeat;
-  background-attachment:scroll;                /* avoids iOS jitter */
+  background-attachment:scroll;     /* avoids iOS jitter */
   background-size:auto, auto, 100% 100%;
   -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
   position:relative; font-synthesis-weight:none;
 
-  /* NEW: also set at runtime in page.tsx, but keep CSS fallback */
+  /* Also set by JS; keep CSS fallback */
   overscroll-behavior: none;
 
-  /* keep edges off notches/home bars without changing layout */
+  /* Respect device safe areas so content never hugs edges */
   padding-left: env(safe-area-inset-left);
   padding-right: env(safe-area-inset-right);
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
 
-  /* optional: reduce tap highlight on iOS */
+  /* Softer tap highlight on iOS */
   -webkit-tap-highlight-color: rgba(255,255,255,0.08);
 }
 
@@ -59,18 +62,23 @@ body::before{
   background: radial-gradient(60% 60% at 50% 35%, rgba(0,0,0,0) 0%, rgba(0,0,0,0.15) 55%, rgba(0,0,0,0.35) 100%);
 }
 
-/* Canvas as base layer (iOS-safe) */
+/* ===== Canvas base layer — fills safe areas (no black gutters) ===== */
 #bg-canvas{
-  position:fixed; inset:0; width:100vw; height:100svh; z-index:0; display:block;
-  /* NEW: ensure canvas never eats touches/clicks even if stacking changes */
-  pointer-events:none;
+  position: fixed;
+  left:  calc(-1 * env(safe-area-inset-left));
+  top:   calc(-1 * env(safe-area-inset-top));
+  width:  calc(100vw + env(safe-area-inset-left) + env(safe-area-inset-right));
+  height: calc(100svh + env(safe-area-inset-top) + env(safe-area-inset-bottom));
+  z-index: 0;
+  display: block;
+  pointer-events: none; /* never intercept clicks/touches */
 }
-@supports (height: 100dvh){
-  #bg-canvas{ height:100dvh; }
+@supports (width: 100dvw){
+  #bg-canvas{
+    width:  calc(100dvw + env(safe-area-inset-left) + env(safe-area-inset-right));
+    height: calc(100dvh + env(safe-area-inset-top) + env(safe-area-inset-bottom));
+  }
 }
-
-/* REMOVE the mobile-only filter (it changed the look on phones) */
-/* @media (max-width: 640px){ #bg-canvas{ filter: brightness(.9) contrast(1.05); } } */
 
 /* Content ABOVE vignette/canvas */
 .container{
@@ -91,7 +99,7 @@ body::before{
   clip:rect(0,0,0,0); white-space:nowrap; border:0;
 }
 
-header{ position:sticky; top:0; z-index:3; background:transparent; } /* keep header above content if overlapping */
+header{ position:sticky; top:0; z-index:3; background:transparent; }
 nav[aria-label="Primary"]{
   display:flex; align-items:center; justify-content:flex-end; padding:14px 0; gap:12px; flex-wrap:wrap
 }
@@ -111,7 +119,7 @@ nav[aria-label="Primary"]{
 .hero{
   display:grid; place-items:center; text-align:center; padding:136px 0 120px;
   position:relative;
-  min-height: 60svh; /* ensures similar feel on tall/short screens */
+  min-height: 60svh; /* similar feel on tall/short screens */
 }
 @supports (min-height: 60dvh){
   .hero{ min-height: 60dvh; }
@@ -131,7 +139,6 @@ nav[aria-label="Primary"]{
   -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;
   font-size:clamp(14px, 2.2vw, 26px); letter-spacing:.18em; text-transform:uppercase; display:inline-block; margin-bottom:16px; font-weight:800
 }
-/* Higher-contrast subheader for phones */
 .subheader{
   max-width:860px; margin:18px auto 36px;
   font-size:clamp(16px, 2.1vw, 20px); line-height:1.7;
@@ -141,7 +148,7 @@ nav[aria-label="Primary"]{
 
 .cta-row{
   display:flex; justify-content:center; margin-top:22px;
-  flex-wrap:wrap; gap:12px; /* prevents overflow on very small widths */
+  flex-wrap:wrap; gap:12px;
 }
 .cta{
   appearance:none; border:1px solid #fff; padding:14px 24px; font-size:17px; font-weight:750;
@@ -153,7 +160,7 @@ nav[aria-label="Primary"]{
 .cta:active{transform:translateY(1px)}
 .cta:hover{opacity:.92}
 
-/* Modal (unchanged visuals; adds padding for tiny screens) */
+/* Modal */
 .modal-backdrop{
   position:fixed; inset:0; display:none; place-items:center; background:rgba(3,2,8,0.55);
   backdrop-filter: blur(6px); z-index:5; padding:16px;
@@ -186,7 +193,7 @@ nav[aria-label="Primary"]{
 .helper{font-size:13px; color:#bdbdde; margin-top:10px}
 .error{margin-top:8px; font-size:13px; color:var(--warn); min-height:18px}
 
-/* Spinner inside submit */
+/* Spinner */
 .spinner{
   width:16px; height:16px; border-radius:999px; border:2px solid rgba(0,0,0,.2); border-top-color:#000;
   display:inline-block; vertical-align:-3px; margin-right:8px; animation:spin .8s linear infinite

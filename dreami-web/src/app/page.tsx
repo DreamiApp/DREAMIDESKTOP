@@ -127,7 +127,7 @@ export default function Home() {
       nebulas = Array.from({ length: nebulaCount }, (): Nebula => ({
         x: Math.random() * w,
         y: Math.random() * h,
-        r: (Math.random() * 0.22 + 0.18) * diag, // was based on max(w,h)
+        r: (Math.random() * 0.22 + 0.18) * diag,
         vx: (Math.random() - 0.5) * 0.03,
         vy: (Math.random() - 0.5) * 0.03,
         hue: 255 + Math.random() * 60,
@@ -144,14 +144,15 @@ export default function Home() {
     function resize() {
       dpr = currentDPRCap();
 
-      const cssW = Math.round(document.documentElement.clientWidth);
-      const cssH = Math.round(window.visualViewport?.height ?? window.innerHeight);
+      // IMPORTANT: measure the *rendered* size (includes safe-area bleed from CSS)
+      const rect = cv.getBoundingClientRect();
+      const cssW = Math.max(1, Math.round(rect.width));
+      const cssH = Math.max(1, Math.round(rect.height));
 
-      cv.width = Math.floor(cssW * dpr);
+      cv.width  = Math.floor(cssW * dpr);
       cv.height = Math.floor(cssH * dpr);
-      cv.style.width = cssW + "px";
-      cv.style.height = cssH + "px";
 
+      // Do NOT set cv.style.width/height here — CSS controls those to cover safe areas
       w = cv.width;
       h = cv.height;
 
@@ -276,9 +277,7 @@ export default function Home() {
         </section>
       </main>
 
-      <noscript>
-        <style>{`#bg-canvas{display:none}`}</style>
-      </noscript>
+      <noscript><style>{`#bg-canvas{display:none}`}</style></noscript>
     </>
   );
 }

@@ -9,8 +9,8 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   minimumScale: 1,
-  userScalable: false,      // disable pinch/double-tap zoom
-  viewportFit: "cover",     // iOS: extend under notch/home bar
+  userScalable: false,              // disable pinch/double-tap zoom
+  viewportFit: "cover",             // iOS: extend under notch/home bar
   themeColor: [
     { media: "(prefers-color-scheme: dark)", color: "#040208" },
     { media: "(prefers-color-scheme: light)", color: "#040208" },
@@ -50,15 +50,15 @@ export const metadata: Metadata = {
     images: ["/og.png"],
   },
 
-  // Favicons for browsers & Google SERP
+  // Favicons for browsers & Google SERP (PNG at multiples of 48px + versioned URLs)
   icons: {
     icon: [
-      { url: "/Dreami.png?v=2", type: "image/png", sizes: "48x48" },   // Google prefers ≥48px
-      { url: "/Dreami.png?v=2", type: "image/png", sizes: "192x192" }, // larger PNG
-      { url: "/favicon.ico", type: "image/x-icon" },                   // real ICO fallback
+      { url: "/favicon-48.png?v=3",  type: "image/png", sizes: "48x48" },
+      { url: "/favicon-192.png?v=3", type: "image/png", sizes: "192x192" },
+      { url: "/favicon.ico?v=3" }, // ICO fallback for older UAs
     ],
-    apple: [{ url: "/Dreami.png?v=2", sizes: "180x180", type: "image/png" }],
-    shortcut: ["/favicon.ico"],
+    apple: [{ url: "/apple-touch-icon.png?v=3", sizes: "180x180", type: "image/png" }],
+    shortcut: ["/favicon.ico?v=3"],
   },
 
   manifest: "/site.webmanifest",
@@ -78,7 +78,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className="no-js">
       <body className={inter.className}>
-        {/* Organization schema: brand logo (absolute URL) */}
+        {/* Organization schema: brand logo (absolute URL to 512 PNG) */}
         <Script id="schema-organization" type="application/ld+json">
           {JSON.stringify({
             "@context": "https://schema.org",
@@ -88,7 +88,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             url: "https://www.dreamiapp.com/",
             logo: {
               "@type": "ImageObject",
-              url: "https://www.dreamiapp.com/Dreami.png",
+              url: "https://www.dreamiapp.com/favicon-512.png",
               width: 512,
               height: 512,
             },

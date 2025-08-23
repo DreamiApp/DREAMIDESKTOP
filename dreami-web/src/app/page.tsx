@@ -49,6 +49,7 @@ export default function Home() {
     document.addEventListener("gesturechange", prevent, nonPassive);
     document.addEventListener("gestureend", prevent, nonPassive);
 
+    // Prevent double-tap zoom
     let last = 0;
     const onTouchEnd = (e: TouchEvent) => {
       const now = Date.now();
@@ -71,12 +72,15 @@ export default function Home() {
   useEffect(() => {
     document.body.classList.remove("no-js");
 
-    const canvasEl = canvasRef.current;
-    if (!(canvasEl instanceof HTMLCanvasElement)) return;
+    // 1) Lock non-null canvas element
+    const maybeEl = canvasRef.current as HTMLCanvasElement | null;
+    if (!maybeEl) return;
+    const cv: HTMLCanvasElement = maybeEl;
 
-    const context = canvasEl.getContext("2d", { alpha: true, desynchronized: true });
-    if (!context) return;
-    const ctx: CanvasRenderingContext2D = context;
+    // 2) Lock non-null drawing context
+    const maybeCtx = cv.getContext("2d", { alpha: true, desynchronized: true });
+    if (!maybeCtx) return;
+    const ctx: CanvasRenderingContext2D = maybeCtx;
 
     const prefersReduced = matchMedia("(prefers-reduced-motion: reduce)");
     let reduceMotion = prefersReduced.matches;
@@ -146,15 +150,15 @@ export default function Home() {
       dpr = currentDPRCap();
 
       // Measure rendered size (CSS fills safe areas)
-      const rect = canvasEl.getBoundingClientRect();
+      const rect = cv.getBoundingClientRect();
       const cssW = Math.max(1, Math.round(rect.width));
       const cssH = Math.max(1, Math.round(rect.height));
 
-      canvasEl.width = Math.floor(cssW * dpr);
-      canvasEl.height = Math.floor(cssH * dpr);
+      cv.width = Math.floor(cssW * dpr);
+      cv.height = Math.floor(cssH * dpr);
 
-      w = canvasEl.width;
-      h = canvasEl.height;
+      w = cv.width;
+      h = cv.height;
 
       ctx.setTransform(1, 0, 0, 1, 0, 0);
       initSky();

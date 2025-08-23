@@ -285,7 +285,7 @@ export default function Home() {
           {/* Hero CTA: opens Calendly in a new tab */}
           <div className="hero-actions">
             <Link
-              href="https://calendly.com/YOUR-ORG/dreami-demo"
+              href="https://calendly.com/dreamiapp/30min"
               target="_blank"
               rel="noopener noreferrer"
               aria-label="Book a Dreami demo on Calendly"
